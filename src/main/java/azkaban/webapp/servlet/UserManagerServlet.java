@@ -4,6 +4,7 @@ import azkaban.server.HttpRequestUtils;
 import azkaban.server.session.Session;
 import azkaban.user.User;
 import azkaban.user.UserManager;
+import azkaban.utils.Props;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -18,6 +19,10 @@ public class UserManagerServlet extends LoginAbstractAzkabanServlet {
 
 
     private UserManager usermanager;
+
+    public UserManagerServlet(Props props) {
+
+    }
 
     @Override
     public void init(ServletConfig config) throws ServletException {

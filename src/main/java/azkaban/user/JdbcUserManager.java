@@ -3,13 +3,20 @@ package azkaban.user;
 import azkaban.database.AzkabanDataSource;
 import azkaban.database.DataSourceUtils;
 import azkaban.utils.Props;
+import org.apache.commons.dbutils.DbUtils;
+import org.apache.log4j.Logger;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
  * Created by meng on 2018/4/21.
  */
 public class JdbcUserManager implements UserManager {
 
-    private static final String ADD_USER = "INSERT INTO TABLE USERS";
+    private static final Logger logger = Logger.getLogger(JdbcUserManager.class);
 
     private final AzkabanDataSource datasource;
 
@@ -19,8 +26,37 @@ public class JdbcUserManager implements UserManager {
 
 
     public User getUser(String username, String password) throws UserManagerException {
-        String sql = "select * from users where username='%s' and password='%s'";
-        return null;
+        User user = null;
+        Connection conn = null;
+        PreparedStatement statment = null;
+        ResultSet result = null;
+
+        try {
+            conn = datasource.getConnection();
+            statment = conn.prepareStatement("select * from users where name= ? and password= ?");
+            statment.setString(1, username);
+            statment.setString(2, password);
+            result = statment.executeQuery();
+
+            if (result.next()) {
+                user = new User(result.getString("name"));
+                user.setEmail(result.getString("email"));
+            }
+            // set group
+            //set permission
+
+        } catch (SQLException e) {
+            logger.error("Get User ERROR", e.fillInStackTrace());
+        } finally {
+            try {
+                DbUtils.close(result);
+                DbUtils.close(statment);
+                DbUtils.close(conn);
+            } catch (Exception e) {
+                logger.error(e.fillInStackTrace());
+            }
+        }
+        return user;
     }
 
     public User addUser(String username, String password) throws UserManagerException {
