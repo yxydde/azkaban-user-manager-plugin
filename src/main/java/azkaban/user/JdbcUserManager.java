@@ -3,7 +3,6 @@ package azkaban.user;
 import azkaban.database.AzkabanDataSource;
 import azkaban.database.DataSourceUtils;
 import azkaban.utils.Props;
-import org.apache.commons.dbutils.DbUtils;
 import org.apache.log4j.Logger;
 
 import java.sql.Connection;
@@ -39,24 +38,57 @@ public class JdbcUserManager implements UserManager {
             result = statment.executeQuery();
 
             if (result.next()) {
+                int user_id = result.getInt("id");
                 user = new User(result.getString("name"));
                 user.setEmail(result.getString("email"));
+                resolveGroupRoles(user_id, user);
+                user.setPermissions(new User.UserPermissions() {
+                    @Override
+                    public boolean hasPermission(final String permission) {
+                        return true;
+                    }
+
+                    @Override
+                    public void addPermission(final String permission) {
+                    }
+                });
             }
-            // set group
-            //set permission
+
 
         } catch (SQLException e) {
             logger.error("Get User ERROR", e.fillInStackTrace());
         } finally {
             try {
-                DbUtils.close(result);
-                DbUtils.close(statment);
-                DbUtils.close(conn);
-            } catch (Exception e) {
+                DataBaseUtils.closeConnection(conn, statment, result);
+            } catch (SQLException e) {
                 logger.error(e.fillInStackTrace());
             }
         }
         return user;
+    }
+
+
+    private void resolveGroupRoles(int user_id, User user) {
+        Connection conn = null;
+        PreparedStatement statment = null;
+        ResultSet result = null;
+        try {
+            conn = datasource.getConnection();
+            statment = conn.prepareStatement("select name from groups where id in(select group_id from user_groups where user_id = ?)");
+            statment.setInt(1, user_id);
+            result = statment.executeQuery();
+            while (result.next()) {
+                user.addGroup(result.getString("name"));
+            }
+        } catch (SQLException e) {
+            logger.error("Get Group ERROR", e.fillInStackTrace());
+        } finally {
+            try {
+                DataBaseUtils.closeConnection(conn, statment, result);
+            } catch (SQLException e) {
+                logger.error(e.fillInStackTrace());
+            }
+        }
     }
 
     public User addUser(String username, String password) throws UserManagerException {

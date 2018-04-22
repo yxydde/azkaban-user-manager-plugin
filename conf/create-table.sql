@@ -8,6 +8,16 @@ CREATE TABLE groups (
 INSERT INTO groups VALUES ('1', 'admin');
 INSERT INTO groups VALUES ('2', 'azkaban');
 
+DROP TABLE IF EXISTS roles;
+CREATE TABLE roles (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  name varchar(255) NOT NULL,
+  PRIMARY KEY (id)
+);
+
+INSERT INTO roles VALUES ('1', 'admin');
+INSERT INTO roles VALUES ('2', 'azkaban');
+
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
   id int(11) NOT NULL AUTO_INCREMENT,
